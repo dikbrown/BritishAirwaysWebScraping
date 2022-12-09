@@ -23,23 +23,23 @@ tidy_reviews %>%
 # tidy_reviews <- tidy_reviews %>%
 #   mutate(month = month(date))
 
-##################################################################
-### Determines total count of positive & negative words for the month
-##################################################################
-bing_sentiment <- tidy_reviews %>%
-  inner_join(get_sentiments("bing")) %>%
-  count(month, sentiment) %>%
-  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>%
-  mutate(sentiment = positive - negative, numReviews = review_counts$n)
-
-
-##########
-### plotting
-############
-
-library(ggplot2)
-ggplot(bing_sentiment, aes(month, sentiment, group = 1)) +
-  geom_line()
+# ##################################################################
+# ### Determines total count of positive & negative words for the month
+# ##################################################################
+# bing_sentiment <- tidy_reviews %>%
+#   inner_join(get_sentiments("bing")) %>%
+#   count(month, sentiment) %>%
+#   pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>%
+#   mutate(sentiment = positive - negative, numReviews = review_counts$n)
+# 
+# 
+# ##########
+# ### plotting
+# ############
+# 
+# library(ggplot2)
+# ggplot(bing_sentiment, aes(month, sentiment, group = 1)) +
+#   geom_line()
 
 
 ##################################################################
@@ -52,7 +52,7 @@ bing_sentiment_avg <- tidy_reviews %>%
   pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>%
   mutate(sentiment = positive - negative) %>%
   group_by(month) %>%
-  summarize(average = mean(sentiment)) %>%
+  summarize(average = mean(sentiment), sd = sd(sentiment)) %>%
   mutate(numReviews = review_counts$n)
 
 bing_sentiment_avg
@@ -62,7 +62,8 @@ bing_sentiment_avg
 ############
 ggplot(bing_sentiment_avg, aes(month, average, group = 1)) +
   geom_line()+ 
-  ggtitle("bing analysis")
+  ggtitle("bing analysis") +
+  geom_errorbar(aes(ymin = average - sd, ymax = average + sd))
 
 ##################################################################
 ### Determines average sentiment score for each month, based on individual review scores
@@ -75,7 +76,7 @@ afinn_sentiment_avg <- tidy_reviews %>%
   group_by(month, reviewNumber) %>%
   summarize(score = sum(value)) %>%
   group_by(month) %>%
-  summarize(average = mean(score)) %>%
+  summarize(average = mean(score), sd = sd(score)) %>%
   mutate(numReviews = review_counts$n)
 
 afinn_sentiment_avg
@@ -86,7 +87,8 @@ afinn_sentiment_avg
 ggplot(afinn_sentiment_avg, aes(month, average, group = 1)) +
   geom_line()+ 
   ggtitle("afinn analysis") +
-  geom_text(aes(label = paste(numReviews, "reviews")), nudge_y = .2)
+  geom_text(aes(label = paste(numReviews, "reviews")), nudge_y = .2)+
+  geom_errorbar(aes(ymin = average - sd, ymax = average + sd))
 
 
 ##################################################################
@@ -98,19 +100,21 @@ nrc_sentiment_avg <- tidy_reviews %>%
   inner_join(get_sentiments("nrc") %>%
                filter(sentiment %in% c("positive", "negative"))
              ) %>%
-  count(reviewNumber, month, sentiment) #%>%
+  count(reviewNumber, month, sentiment) %>%
   pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>%
   mutate(sentiment = positive - negative) %>%
   group_by(month) %>%
-  summarize(average = mean(sentiment))
+  summarize(average = mean(sentiment), sd = sd(sentiment))
 
+nrc_sentiment_avg
 
 ##########
 ### plotting
 ############
 ggplot(nrc_sentiment_avg, aes(month, average, group = 1)) +
   geom_line() + 
-  ggtitle("nrc analysis")
+  ggtitle("nrc analysis") +
+  geom_errorbar(aes(ymin = average - sd, ymax = average + sd))
 
 
 ###### Combine
